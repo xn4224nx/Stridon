@@ -1,0 +1,15 @@
+black
+certifi
+charset-normalizer
+click
+idna
+iniconfig
+mypy-extensions
+packaging
+pathspec
+platformdirs
+pluggy
+pytest
+requests
+sockets
+urllib3
