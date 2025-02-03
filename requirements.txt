@@ -1,4 +1,6 @@
+beautifulsoup4
 black
+bs4
 certifi
 charset-normalizer
 click
@@ -12,4 +14,7 @@ pluggy
 pytest
 requests
 sockets
+soupsieve
+tqdm
+typing_extensions
 urllib3
