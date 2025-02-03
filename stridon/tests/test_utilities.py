@@ -15,7 +15,7 @@ def test_internet_connections():
     except:
         connected = False
 
-    # No ensure the function gets the same result
+    # Now ensure the function gets the same result
     try:
         stridon.utilities.is_internet_up()
         f_conn = True
