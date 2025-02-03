@@ -48,4 +48,4 @@ def write_json_file(file_path: str, data: dict):
     Save a dictionary in memory to disk as a pretty printed JSON file.
     """
     with open(file_path, "w") as fp:
-        json.dump(data, fp)
+        json.dump(data, fp, indent=4, sort_keys=True)
