@@ -7,6 +7,7 @@ Universal function that are applicable in most areas.
 
 import socket
 import json
+import requests
 
 
 def is_internet_up():
@@ -23,7 +24,7 @@ def read_json_url(url: str) -> dict:
     """
     Open a URL from an internet address and parse it as a dictionary.
     """
-    pass
+    return json.loads(requests.get(url).text)
 
 
 def read_json_file(file_path: str, ret_empty: bool = True) -> dict:
@@ -31,11 +32,20 @@ def read_json_file(file_path: str, ret_empty: bool = True) -> dict:
     Open a JSON file on disk and return its contents as a python dictionary. If
     the parse fails or the item doesn't exist return an empty dictionary.
     """
-    pass
+    try:
+        with open(file_path, "r") as fp:
+            return json.load(fp)
+
+    except Exception as err:
+        if ret_empty:
+            return {}
+        else:
+            raise Exception(f"{file_path} could not be loaded due to '{err}'")
 
 
 def write_json_file(file_path: str, data: dict):
     """
     Save a dictionary in memory to disk as a pretty printed JSON file.
     """
-    pass
+    with open(file_path, "w") as fp:
+        json.dump(data, fp)
