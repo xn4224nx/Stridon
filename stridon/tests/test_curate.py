@@ -19,6 +19,10 @@ def test_initation():
     assert "pandas" in test.pack_popularity
     assert "boto3" in test.pack_popularity
 
+    # Check the created files exist
+    assert Path(test.data_dir, test.package_names_file).is_file()
+    assert Path(test.data_dir, test.popular_packages).is_file()
+
 
 def test_get_download_link():
     test = Curate()
