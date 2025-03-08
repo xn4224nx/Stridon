@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from tqdm import tqdm
 import shutil
+import time
 
 from . import utilities
 
@@ -183,10 +184,29 @@ class Curate:
         Download all package metadata from the PyPI repository and save it to
         disk.
         """
-        pass
+        for pack_idx, pack_name in enumerate(self.pack_index):
+            self.get_download_link(pack_name)
 
-    def all_packages(self):
+            # Save the updated index to file
+            if pack_idx + 1 % 10 == 0:
+                utilities.write_json_file(
+                    Path(self.data_dir, self.package_names_file), self.pack_index
+                )
+
+            # Wait to ensure the api is not overwelmed
+            time.sleep(2)
+
+        utilities.write_json_file(
+            Path(self.data_dir, self.package_names_file), self.pack_index
+        )
+
+    def all_packages(self, save_direct: str):
         """
-        Download all packages and metadata from the PyPI.
+        Download all packages from the PyPI.
         """
-        pass
+        for pack_idx, pack_name in pack_idx, pack_name in enumerate(self.pack_index):
+            if "src_link" in self.pack_index[pack_name]:
+                self.download_package_src(pack_name, save_direct)
+
+                # Wait to ensure the api is not overwelmed
+                time.sleep(2)
