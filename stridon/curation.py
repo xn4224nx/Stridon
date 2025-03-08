@@ -15,7 +15,7 @@ from zipfile import ZipFile
 from bs4 import BeautifulSoup
 from pathlib import Path
 from tqdm import tqdm
-
+import shutil
 
 from . import utilities
 
@@ -138,6 +138,38 @@ class Curate:
                         and t_subfile.size > 0
                     ):
                         td_fp.addfile(t_subfile, ts_fp.extractfile(t_subfile.name))
+
+    def extract_setup_files(
+        self, in_pack_fp: str, out_pack_dir: str, pack_nm: str
+    ) -> bool:
+        """
+        Open a downloaded tar ball and extract all the `setup.py` files and
+        extract them to a specified folder. Rename the extracted file with a
+        uuid and the original name of the tarball.
+        """
+        with tarfile.open(in_pack_fp, "r") as ts_fp:
+            extract_cnt = 0
+            tar_name = Path(in_pack_fp).stem
+
+            # Iterate over each of the files in the tarball and extract setup.py
+            for t_subfile in ts_fp.getmembers():
+                print(t_subfile.name)
+
+                if (
+                    Path(t_subfile.name).name == "setup.py"
+                    and t_subfile.isfile()
+                    and t_subfile.size > 0
+                ):
+                    out_file = Path(out_pack_dir, f"{pack_nm}-{extract_cnt}.py")
+
+                    # Extract the file
+                    with open(out_file, "wb") as out_fp:
+                        shutil.copyfileobj(ts_fp.extractfile(t_subfile), out_fp)
+
+                    extract_cnt += 1
+
+        # Confirm if any setup files were found
+        return extract_cnt > 0
 
     def rnd_packages(self, num_pack: int = 100):
         """
