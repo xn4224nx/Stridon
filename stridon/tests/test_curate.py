@@ -93,3 +93,14 @@ def test_extract_package_no_file():
         test.extract_package(
             Path(test_data_dir, "no_such_package.tar.gz"), test_data_dir, "module-name"
         )
+
+
+def test_extract_setup_files():
+    test = Curate()
+    extracted_file = Path(test_data_dir, "module-name-0.py")
+
+    assert test.extract_setup_files(
+        Path(test_data_dir, "example-module-setup.tar.gz"), test_data_dir, "module-name"
+    )
+    assert extracted_file.is_file()
+    extracted_file.unlink(missing_ok=True)
