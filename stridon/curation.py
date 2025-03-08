@@ -60,8 +60,6 @@ class Curate:
 
         # Using a third party index extract a list of the most downloaded packages from PyPI
         if not self.pack_popularity:
-            self.pack_popularity = set()
-
             raw_popularity = utilities.read_json_url(
                 "https://hugovk.github.io/top-pypi-packages/top-pypi-packages.json"
             )
