@@ -15,6 +15,10 @@ def test_initation():
     assert "pandas" in test.pack_index
     assert test.pack_index["numpy"] == {}
 
+    assert "numpy" in test.pack_popularity
+    assert "pandas" in test.pack_popularity
+    assert "boto3" in test.pack_popularity
+
 
 def test_get_download_link():
     test = Curate()

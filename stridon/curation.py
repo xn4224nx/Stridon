@@ -6,6 +6,7 @@ Download data from the Python Package Index. Mainly using the simple index:
 
     https://pypi.org/simple/
 
+Avoid popular packages within the top 150,000 downloaded weekly.
 """
 
 import requests
@@ -31,8 +32,13 @@ class Curate:
         utilities.is_internet_up()
         self.data_dir = "data"
         self.package_names_file = "package_names.json"
+        self.popular_packages = "popular_packages.json"
+
         pack_name_file = Path(self.data_dir, self.package_names_file)
+        popular_name_file = Path(self.data_dir, self.popular_packages)
+
         self.pack_index = utilities.read_json_file(pack_name_file)
+        self.pack_popularity = set(utilities.read_json_file(popular_name_file))
 
         # If the package names can't be found download the simple webpage and
         # extract all the package names and create the files.
@@ -42,15 +48,36 @@ class Curate:
             for link in BeautifulSoup(simp_page, "html.parser").find_all("a"):
                 self.pack_index[link.get("href").split("/")[-2]] = {}
 
-            print(f"Package Names Downloaded:    {len(self.pack_index)}")
+            print(f"Package Names Downloaded:             {len(self.pack_index)}")
 
             # Recreate the data folder and save the names to disk
             Path(self.data_dir).mkdir(parents=True, exist_ok=True)
             utilities.write_json_file(pack_name_file, self.pack_index)
-            print(f"Package Names Saved to Disk: '{pack_name_file}'")
+            print(f"Package Names Saved to Disk:          '{pack_name_file}'")
 
         else:
-            print(f"Package Names Loaded:        {len(self.pack_index)}")
+            print(f"Package Names Loaded:                 {len(self.pack_index)}")
+
+        # Using a third party index extract a list of the most downloaded packages from PyPI
+        if not self.pack_popularity:
+            self.pack_popularity = set()
+
+            raw_popularity = utilities.read_json_url(
+                "https://hugovk.github.io/top-pypi-packages/top-pypi-packages.json"
+            )
+
+            # Extract only the names of the top 15,000
+            for pack_details in raw_popularity["rows"]:
+                self.pack_popularity.add(pack_details["project"])
+            print(f"Popular Packages Names Downloaded:    {len(self.pack_popularity)}")
+
+            # Recreate the data folder and save the names to disk
+            Path(self.data_dir).mkdir(parents=True, exist_ok=True)
+            utilities.write_json_file(popular_name_file, list(self.pack_popularity))
+            print(f"Popular Packages Names Saved to Disk: '{popular_name_file}'")
+
+        else:
+            print(f"Package Packages Names Loaded:        {len(self.pack_popularity)}")
 
     def get_package_metadata(self, pack_nm: str) -> dict:
         """
