@@ -86,7 +86,7 @@ class Curate:
         """
         return utilities.read_json_url(f"https://pypi.python.org/pypi/{pack_nm}/json")
 
-    def get_download_link(self, pack_nm: str):
+    def get_download_link(self, pack_nm: str) -> bool:
         """
         Access the PyPI and get the download link for a single package in the
         repository.
@@ -105,6 +105,8 @@ class Curate:
             ful_lnk, sha_digest = tar_links[-1].rsplit("#", 1)
             self.pack_index[pack_nm]["src_link"] = ful_lnk
             self.pack_index[pack_nm]["src_hash"] = sha_digest
+            return True
+        return False
 
     def download_package_src(self, pack_nm: str, down_loc: str):
         """
@@ -135,8 +137,6 @@ class Curate:
 
             # Iterate over each of the files in the tarball and extract setup.py
             for t_subfile in ts_fp.getmembers():
-                print(t_subfile.name)
-
                 if (
                     Path(t_subfile.name).name == "setup.py"
                     and t_subfile.isfile()
@@ -168,32 +168,26 @@ class Curate:
         # Loop until the required number are downloaded
         while down_packs < num_pack:
             pack_name = random.choice(unc_packs)
+            unc_packs.remove(pack_name)
             print(f"\n{down_packs+1:6} {pack_name}")
 
             # Check this has not already been picked
             if "downloaded" not in self.pack_index[pack_name]:
-                try:
-                    self.get_download_link(pack_name)
+                self.pack_index[pack_name]["downloaded"] = True
 
-                    if "src_link" not in self.pack_index[pack_name]:
-                        print(f"\tTarball download link found!")
-                        self.download_package_src(pack_name, down_dir)
+                if not self.get_download_link(pack_name):
+                    print(f"\tNo download link found!")
+                    time.sleep(2)
+                    continue
 
-                        if self.extract_setup_files(pack_name, extract_dir):
-                            print(f"\tSetup files found!")
-                            down_packs += 1
-                    else:
-                        print(f"\tNo download link found!")
+                self.download_package_src(pack_name, down_dir)
 
-                except Exception as err:
-                    print(f"\tError: {err}")
-
+                if self.extract_setup_files(pack_name, extract_dir):
+                    print(f"\tSetup files found!")
+                    time.sleep(2)
+                    down_packs += 1
             else:
                 print(f"\tAlready downloaded.")
-
-            # Make a record of the downloaded packages
-            unc_packs.remove(pack_name)
-            self.pack_index[pack_name]["downloaded"] = True
 
     def all_metadata(self):
         """

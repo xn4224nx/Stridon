@@ -26,7 +26,7 @@ def test_initation():
 
 def test_get_download_link():
     test = Curate()
-    test.get_download_link("numpy")
+    assert test.get_download_link("numpy")
 
     assert "src_link" in test.pack_index["numpy"]
     assert test.pack_index["numpy"]["src_link"].startswith("https")
@@ -47,7 +47,7 @@ def test_get_package_metadata():
 
 def test_download_package_src():
     test = Curate()
-    test.get_download_link("black")
+    assert test.get_download_link("black")
     test.download_package_src("black", test_data_dir)
     downloaded_file = Path(test_data_dir, "black.tar.gz")
 
