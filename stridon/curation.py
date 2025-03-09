@@ -17,6 +17,7 @@ from pathlib import Path
 from tqdm import tqdm
 import shutil
 import time
+import random
 
 from . import utilities
 
@@ -110,47 +111,27 @@ class Curate:
         Find a package and download its source code to disk in the specified
         download directory.
         """
+        pack_down_path = Path(down_loc, pack_nm + ".tar.gz")
+
         if "src_link" not in self.pack_index[pack_nm]:
             raise Exception(f"Link for package {pack_nm} not found!")
 
         response = requests.get(self.pack_index[pack_nm]["src_link"], stream=True)
 
-        with open(Path(down_loc, pack_nm + ".tar.gz"), "wb") as handle:
+        with open(pack_down_path, "wb") as handle:
             for data in tqdm(response.iter_content(chunk_size=1024), unit="kB"):
                 handle.write(data)
 
-    def extract_package(self, in_pack_fp: str, out_pack_dir: str, pack_nm: str):
-        """
-        After a package has been downloaded to disk, open the tarball and
-        extract all the python script files and repackage then into a zip
-        without nesting. The original filenames will be preserved within reason.
-        """
-        with tarfile.open(in_pack_fp, "r") as ts_fp:
-            with tarfile.open(Path(out_pack_dir, pack_nm + ".tar.xz"), "w:xz") as td_fp:
+        self.pack_index[pack_nm]["tar_path"] = str(pack_down_path)
 
-                # Get the names of files in the archive smaller than 50MB and
-                # greater than zero that have the file extension .py and add
-                # these files to the new tarball.
-                for t_subfile in ts_fp.getmembers():
-                    if (
-                        t_subfile.name.endswith(".py")
-                        and t_subfile.isfile()
-                        and t_subfile.size < 50 * 10 ^ 6
-                        and t_subfile.size > 0
-                    ):
-                        td_fp.addfile(t_subfile, ts_fp.extractfile(t_subfile.name))
-
-    def extract_setup_files(
-        self, in_pack_fp: str, out_pack_dir: str, pack_nm: str
-    ) -> bool:
+    def extract_setup_files(self, pack_nm: str, extract_dir: str) -> bool:
         """
         Open a downloaded tar ball and extract all the `setup.py` files and
         extract them to a specified folder. Rename the extracted file with a
         uuid and the original name of the tarball.
         """
-        with tarfile.open(in_pack_fp, "r") as ts_fp:
+        with tarfile.open(self.pack_index[pack_nm]["tar_path"], "r") as ts_fp:
             extract_cnt = 0
-            tar_name = Path(in_pack_fp).stem
 
             # Iterate over each of the files in the tarball and extract setup.py
             for t_subfile in ts_fp.getmembers():
@@ -161,7 +142,7 @@ class Curate:
                     and t_subfile.isfile()
                     and t_subfile.size > 0
                 ):
-                    out_file = Path(out_pack_dir, f"{pack_nm}-{extract_cnt}.py")
+                    out_file = Path(extract_dir, f"{pack_nm}-{extract_cnt}.py")
 
                     # Extract the file
                     with open(out_file, "wb") as out_fp:
@@ -172,12 +153,47 @@ class Curate:
         # Confirm if any setup files were found
         return extract_cnt > 0
 
-    def rnd_packages(self, num_pack: int = 100):
+    def rnd_uncommon_setups(self, extract_dir: str, down_dir: str, num_pack: int = 100):
         """
-        Access the repository and download the entirety of a certain specified
-        number of packages, both metadata and source files.
+        Access the repository and download uncommon packages and extract their
+        setup files to a specified directory `extract_dir`, and save the
+        raw data in `down_dir`.
         """
-        pass
+        down_packs = 0
+        print("\nDOWNLOADING RANDOM PACKAGES\n===========================\n")
+
+        unc_packs = [x for x in self.pack_index if x not in self.pack_popularity]
+        print(f"Uncommon Packages Found: {len(unc_packs)}")
+
+        # Loop until the required number are downloaded
+        while down_packs < num_pack:
+            pack_name = random.choice(unc_packs)
+            print(f"\n{down_packs+1:6} {pack_name}")
+
+            # Check this has not already been picked
+            if "downloaded" not in self.pack_index[pack_name]:
+                try:
+                    self.get_download_link(pack_name)
+
+                    if "src_link" not in self.pack_index[pack_name]:
+                        print(f"\tTarball download link found!")
+                        self.download_package_src(pack_name, down_dir)
+
+                        if self.extract_setup_files(pack_name, extract_dir):
+                            print(f"\tSetup files found!")
+                            down_packs += 1
+                    else:
+                        print(f"\tNo download link found!")
+
+                except Exception as err:
+                    print(f"\tError: {err}")
+
+            else:
+                print(f"\tAlready downloaded.")
+
+            # Make a record of the downloaded packages
+            unc_packs.remove(pack_name)
+            self.pack_index[pack_name]["downloaded"] = True
 
     def all_metadata(self):
         """

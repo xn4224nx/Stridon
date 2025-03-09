@@ -53,6 +53,7 @@ def test_download_package_src():
 
     assert downloaded_file.is_file()
     assert tarfile.is_tarfile(downloaded_file)
+    assert test.pack_index["black"]["tar_path"] == str(downloaded_file)
 
     downloaded_file.unlink(missing_ok=True)
 
@@ -65,42 +66,13 @@ def test_download_package_src_no_link():
     Path(test_data_dir, "pandas.tar.gz").unlink(missing_ok=True)
 
 
-def test_extract_package():
-    test = Curate()
-    test.extract_package(
-        Path(test_data_dir, "example-module.tar.gz"), test_data_dir, "module-name"
-    )
-    extracted_file = Path(test_data_dir, "module-name.tar.xz")
-
-    assert extracted_file.is_file()
-    assert tarfile.is_tarfile(extracted_file)
-
-    collected_file_names = []
-    with tarfile.open(extracted_file, "r") as test_tar:
-        for t_file in test_tar.getmembers():
-            assert t_file.isfile()
-            assert t_file.name.endswith(".py")
-            collected_file_names.append(t_file.name)
-
-    assert len(collected_file_names) == 64
-
-    extracted_file.unlink(missing_ok=True)
-
-
-def test_extract_package_no_file():
-    test = Curate()
-    with pytest.raises(Exception):
-        test.extract_package(
-            Path(test_data_dir, "no_such_package.tar.gz"), test_data_dir, "module-name"
-        )
-
-
 def test_extract_setup_files():
     test = Curate()
+    test.pack_index["module-name"]["tar_path"] = Path(
+        test_data_dir, "example-module-setup.tar.gz"
+    )
     extracted_file = Path(test_data_dir, "module-name-0.py")
 
-    assert test.extract_setup_files(
-        Path(test_data_dir, "example-module-setup.tar.gz"), test_data_dir, "module-name"
-    )
+    assert test.extract_setup_files("module-name", test_data_dir)
     assert extracted_file.is_file()
     extracted_file.unlink(missing_ok=True)
