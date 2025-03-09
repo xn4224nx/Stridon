@@ -184,11 +184,26 @@ class Curate:
         Download all package metadata from the PyPI repository and save it to
         disk.
         """
+        print("\nDOWNLOADING METADATA\n====================\n")
+
         for pack_idx, pack_name in enumerate(self.pack_index):
-            self.get_download_link(pack_name)
+            print(f"\n{pack_idx+1:6}: Downloading Link For {pack_name}")
+
+            if "src_link" not in self.pack_index[pack_name]:
+                self.get_download_link(pack_name)
+
+                # Check something got downloaded
+                if "src_link" in self.pack_index[pack_name]:
+                    print(f"\tURL: {self.pack_index[pack_name]["src_link"]}")
+                else:
+                    print(f"\tNo Tarballs found!")
+
+            else:
+                print(f"\tLink already exists.")
 
             # Save the updated index to file
-            if pack_idx + 1 % 10 == 0:
+            if (pack_idx + 1) % 10 == 0:
+                print("\tSaved data to disk.")
                 utilities.write_json_file(
                     Path(self.data_dir, self.package_names_file), self.pack_index
                 )
